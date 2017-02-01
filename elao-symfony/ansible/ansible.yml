@@ -1,0 +1,11 @@
+---
+
+# App
+- hosts: app
+  gather_facts: false
+  vars:
+    manala_ansible_galaxy_roles:
+      - manala.ansible-galaxy
+      - manala.skeleton
+  roles:
+    - manala.ansible-galaxy

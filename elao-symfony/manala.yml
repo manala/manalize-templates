@@ -1,0 +1,4 @@
+app_system:
+  box:         manala/app-dev-debian
+  box_version: ~> 3.0.0
+  memory:      1024

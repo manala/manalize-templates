@@ -1,0 +1,23 @@
+.PHONY: provision
+
+#############
+# Provision #
+#############
+
+## Provision
+provision: export ANSIBLE_EXTRA_VARS = {"manala":{"update":false}}
+provision:
+	$(call log,Vagrant provision...)
+	@vagrant provision --provision-with app
+
+## Provision - Nginx
+provision-nginx: export ANSIBLE_TAGS = manala_nginx
+provision-nginx: provision
+
+## Provision - Php
+provision-php: export ANSIBLE_TAGS = manala_php
+provision-php: provision
+
+## Provision - Files
+provision-files: export ANSIBLE_TAGS = manala_files
+provision-files: provision
