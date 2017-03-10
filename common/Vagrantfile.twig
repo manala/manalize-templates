@@ -1,31 +1,38 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-manala = YAML::load(File.read(File.dirname(__FILE__) + '/../manala.yml'))
+app = {
+  :name        => '{# app_name #}',
+  :box         => 'manala/app-dev-debian',
+  :box_version => '{# box_version|raw #}',
+  :box_memory  => 1024
+}
 
 Vagrant.require_version '>= 1.8.4'
 
 Vagrant.configure(2) do |config|
+
+  # Force vagrant to use virtualbox provider
+  config.vm.provider "virtualbox"
 
   # Ssh
   config.ssh.username      = 'app'
   config.ssh.forward_agent = true
 
   # Vm
-  config.vm.box           = manala['app_system']['box']
-  config.vm.box_version   = manala['app_system']['box_version']
-  config.vm.hostname      = manala['app'] + '.dev'
+  config.vm.box           = app[:box]
+  config.vm.box_version   = app[:box_version]
+  config.vm.hostname      = app[:name] + '.dev'
   config.vm.network       'private_network', type: 'dhcp'
   config.vm.define        'localhost' do |localhost| end
-  config.vm.synced_folder '..', '/srv/app',
+  config.vm.synced_folder '.', '/srv/app',
     type: 'nfs',
     mount_options: ['nolock', 'actimeo=1', 'fsc']
 
   # Vm - Provider - Virtualbox
-  config.vm.provider 'virtualbox' # Force provider
   config.vm.provider :virtualbox do |virtualbox|
-    virtualbox.name   = manala['app']
-    virtualbox.memory = manala['app_system']['memory']   
+    virtualbox.name   = app[:name]
+    virtualbox.memory = app[:box_memory]
     virtualbox.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
     virtualbox.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
   end
@@ -44,7 +51,7 @@ Vagrant.configure(2) do |config|
   for playbook in ['ansible', 'app']
     config.vm.provision playbook, type: 'ansible_local' do |ansible|
       ansible.version           = (playbook == 'ansible') ? 'latest' : ''
-      ansible.provisioning_path = '/srv/app/manala/ansible'
+      ansible.provisioning_path = '/srv/app/ansible'
       ansible.playbook          = playbook + '.yml'
       ansible.inventory_path    = '/etc/ansible/hosts'
       ansible.tags              = ENV['ANSIBLE_TAGS']
