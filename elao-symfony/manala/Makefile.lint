@@ -1,0 +1,157 @@
+.PHONY: lint fix
+
+# Help
+ifneq ($(LINT_PHP)$(LINT_JS)$(LINT_CSS),)
+HELP += \
+	\n$(COLOR_COMMENT)Lint/Fix:$(COLOR_RESET)\
+	\n  $(COLOR_INFO)lint:$(COLOR_RESET)     Lint
+endif
+
+ifdef LINT_PHP
+HELP += \
+	\n  $(COLOR_INFO)lint-php:$(COLOR_RESET) Lint php part
+endif
+
+ifdef LINT_JS
+HELP += \
+	\n  $(COLOR_INFO)lint-js:$(COLOR_RESET)  Lint js part
+endif
+
+ifdef LINT_CSS
+HELP += \
+	\n  $(COLOR_INFO)lint-css:$(COLOR_RESET) Lint css part
+endif
+
+ifneq ($(LINT_PHP)$(LINT_JS)$(LINT_CSS),)
+HELP += \
+	\n  $(COLOR_INFO)fix:$(COLOR_RESET)      Fix
+endif
+
+ifdef LINT_PHP
+HELP += \
+	\n  $(COLOR_INFO)fix-php:$(COLOR_RESET)  Fix php part
+endif
+
+ifdef LINT_JS
+HELP += \
+	\n  $(COLOR_INFO)fix-js:$(COLOR_RESET)   Fix js part
+endif
+
+ifdef LINT_CSS
+HELP += \
+	\n  $(COLOR_INFO)fix-css:$(COLOR_RESET)  Fix css part
+endif
+
+ifneq ($(LINT_PHP)$(LINT_JS)$(LINT_CSS),)
+HELP += \
+	\n
+endif
+
+##############
+# Lint / Fix #
+##############
+
+ifneq ($(LINT_PHP)$(LINT_JS)$(LINT_CSS),)
+
+lint:
+
+fix:
+
+endif
+
+ifdef LINT_PHP
+
+lint: lint-php
+
+lint-php:
+	$(call log,PHP CS Fixer)
+	-php-cs-fixer \
+		--dry-run \
+		--ansi \
+		--diff \
+		--verbose \
+		--no-interaction \
+		fix
+
+lint-php@test:
+	mkdir -p build/lint
+	$(call log,PHP CS Fixer)
+	php-cs-fixer \
+		--dry-run \
+		--ansi \
+		--diff \
+		--verbose \
+		--no-interaction -\
+		-format=junit \
+		fix > build/lint/php-cs-fixer.xml
+
+fix: fix-php
+
+fix-php:
+	$(call log,PHP CS Fixer)
+	-php-cs-fixer \
+		--ansi \
+		--no-interaction \
+		fix
+
+endif
+
+ifdef LINT_JS
+
+lint: lint-js
+
+lint-js:
+	$(call log,ESLint)
+	-eslint \
+		--format stylish \
+		--cache \
+		"$(LINT_JS)"
+
+lint-js@test:
+	$(call log,Yarn)
+	yarn install
+	$(call log,ESLint)
+	eslint \
+		--format /usr/local/lib/node_modules/eslint-formatter-relative-junit \
+		--output-file build/lint/eslint.xml \
+		--cache \
+		"$(LINT_JS)"
+
+fix: fix-js
+
+fix-js:
+	$(call log,ESLint)
+	-eslint \
+		--cache \
+		--fix \
+		"$(LINT_JS)"
+
+endif
+
+ifdef LINT_CSS
+
+lint: lint-css
+
+lint-css:
+	$(call log,Stylelint)
+	-stylelint \
+		--config-basedir /usr/local/lib/node_modules/ \
+		--formatter verbose \
+		"$(LINT_CSS)/**/*.scss"
+
+lint-css@test:
+	mkdir -p build/lint
+	$(call log,Stylelint)
+	stylelint \
+		--config-basedir /usr/local/lib/node_modules/ \
+		--custom-formatter /usr/local/lib/node_modules/stylelint-formatter-relative-junit \
+		"$(LINT_CSS)/**/*.scss" > build/lint/stylelint.xml
+
+fix: fix-css
+
+fix-css:
+	$(call log,Stylefmt)
+	-stylefmt \
+		--recursive \
+		"$(LINT_CSS)/**/*.scss"
+endif

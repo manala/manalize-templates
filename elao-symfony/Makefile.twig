@@ -1,40 +1,35 @@
 .SILENT:
-.PHONY: build test
+.PHONY: install build test
 
-## Colors
-COLOR_RESET   = \033[0m
-COLOR_INFO    = \033[32m
-COLOR_COMMENT = \033[33m
+##########
+# Manala #
+##########
 
-## Help
-help:
-	printf "${COLOR_COMMENT}Usage:${COLOR_RESET}\n"
-	printf " make [target]\n\n"
-	printf "${COLOR_COMMENT}Available targets:${COLOR_RESET}\n"
-	awk '/^[a-zA-Z\-\_0-9\.@]+:/ { \
-		helpMessage = match(lastLine, /^## (.*)/); \
-		if (helpMessage) { \
-			helpCommand = substr($$1, 0, index($$1, ":")); \
-			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
-			printf " ${COLOR_INFO}%-16s${COLOR_RESET} %s\n", helpCommand, helpMessage; \
-		} \
-	} \
-	{ lastLine = $$0 }' $(MAKEFILE_LIST)
+# Lint
+LINT_PHP = .
+LINT_JS  = ./app/Resources/assets/js
+LINT_CSS = ./app/Resources/assets/sass
 
-###############
-# Environment #
-###############
+# Security
+SECURITY_PHP = .
 
-## Setup environment & Install & Build application
-setup:
-	if [ -d  "./var/cache" ]; then rm -rf ./var/cache; fi;
-	if [ -d "./var/logs" ]; then rm -rf ./var/logs; fi;
-	if [ -d "./var/sessions" ]; then rm -rf ./var/sessions; fi;
-	vagrant up --no-provision
-	vagrant provision
-	vagrant ssh -- "cd /srv/app && make install && make build"
+include manala/Makefile
 
-{% include('common/make/environment_tasks.twig') %}
+################
+# Environments #
+################
+
+# Test
+%@test: export SYMFONY_ENV = test
+%@test: export NODE_ENV    = test
+
+# Staging
+%@staging: export SYMFONY_ENV = prod
+%@staging: export NODE_ENV    = production
+
+# Production
+%@production: export SYMFONY_ENV = prod
+%@production: export NODE_ENV    = production
 
 ###########
 # Install #
@@ -42,53 +37,121 @@ setup:
 
 ## Install application
 install:
-	composer install --verbose
-	bin/console doctrine:database:create --if-not-exists
+$(call log,Link directories)
+$(call link_directory, var/logs,     $(APP_LOG_DIR))
+$(call link_directory, var/cache,    $(APP_CACHE_DIR))
+$(call link_directory, var/sessions, $(APP_SESSIONS_DIR))
 
-install@test: export SYMFONY_ENV = test
+$(call log,Composer)
+composer install --verbose
+
+$(call log,Database)
+bin/console doctrine:database:create --if-not-exists
+bin/console doctrine:schema:update --force
+bin/console doctrine:fixtures:load --no-interaction
+
+$(call log,Database - Test)
+bin/console doctrine:database:create --if-not-exists --env=test
+bin/console doctrine:schema:update --force --env=test
+bin/console doctrine:fixtures:load --no-interaction --env=test
+
+$(call log,Yarn)
+yarn install
+
 install@test:
-	# Composer
-	composer install --verbose --no-progress --no-interaction
-	# Doctrine
-	bin/console doctrine:database:drop --force --if-exists
-	bin/console doctrine:database:create --if-not-exists
-	bin/console doctrine:schema:update --force
+$(call log,Composer)
+composer install --verbose --no-progress --no-interaction
 
-install@demo: export SYMFONY_ENV = prod
-install@demo:
-	# Composer
-	composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader
-	# Symfony cache
-	bin/console cache:warmup --no-debug
-	# Doctrine migrations
-	bin/console doctrine:migrations:migrate --no-debug --no-interaction
+$(call log,Database)
+bin/console doctrine:database:drop --force --if-exists
+bin/console doctrine:database:create --if-not-exists
+bin/console doctrine:schema:update --force
 
-install@prod: export SYMFONY_ENV = prod
-install@prod:
-	# Composer
-	composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader --no-dev
-	# Symfony cache
-	bin/console cache:warmup --no-debug
-	# Doctrine migrations
-	bin/console doctrine:migrations:migrate --no-debug --no-interaction
+$(call log,Yarn)
+yarn install
 
-##########
-# Build #
-##########
+install@staging:
+$(call log,Link directories)
+$(call link_directory, var/logs,     $(APP_LOG_DIR))
+$(call link_directory, var/cache,    $(APP_CACHE_DIR))
+$(call link_directory, var/sessions, $(APP_SESSIONS_DIR))
 
+$(call log,Composer)
+composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader
+
+$(call log,Symfony cache)
+bin/console cache:warmup
+
+$(call log,Yarn)
+yarn install
+
+install@production:
+$(call log,Link directories)
+$(call link_directory, var/logs,     $(APP_LOG_DIR))
+$(call link_directory, var/cache,    $(APP_CACHE_DIR))
+$(call link_directory, var/sessions, $(APP_SESSIONS_DIR))
+
+$(call log,Composer)
+composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+$(call log,Symfony cache)
+bin/console cache:warmup --no-debug
+
+$(call log,Yarn)
+yarn install
+
+#################
+# Build / Watch #
+#################
+
+## Build application
 build:
-	if [ -f "gulpfile" ]; then gulp --dev; fi;
-build@demo:
-	if [ -f "gulpfile" ]; then gulp; fi;
-build@prod:
-	if [ -f "gulpfile" ]; then gulp; fi;
+$(call log,Webpack)
+node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
+
+build@production: build
+
+## Watch application
+watch:
+$(call log,Webpack)
+node_modules/webpack/bin/webpack.js --watch --watch-poll --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
+
+########
+# Test #
+########
+
+## Run tests
+test:
+$(call log,PHPUnit)
+vendor/bin/phpunit
+
+$(call log,Behat)
+bin/console cache:clear --env=test && vendor/bin/behat
+
+test@test:
+$(call log,PHPUnit)
+rm -Rf build/phpunit && mkdir -p build/phpunit
+stty cols 80 && vendor/bin/phpunit --log-junit build/phpunit/junit.xml --coverage-clover build/phpunit/clover.xml --coverage-html build/phpunit/coverage
+
+$(call log,Behat)
+rm -Rf build/behat && mkdir -p build/behat
+bin/console cache:clear && vendor/bin/behat --format=junit --out=build/behat --no-interaction
 
 ##########
 # Deploy #
 ##########
 
-{% include('common/make/deploy_tasks.twig') %}
+## Deploy application (staging)
+deploy@staging:
+$(call log,Ansible playbook)
+ansible-playbook ansible/deploy.yml --inventory-file=ansible/hosts --limit=deploy_demo
 
-##########
-# Custom #
-##########
+## Deploy application (production)
+deploy@production:
+$(call log,Ansible playbook)
+ansible-playbook ansible/deploy.yml --inventory-file=ansible/hosts --limit=deploy_prod
+
+#######
+# App #
+#######
+

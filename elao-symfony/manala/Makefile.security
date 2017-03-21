@@ -1,0 +1,42 @@
+.PHONY: security
+
+# Help
+ifneq ($(SECURITY_PHP),)
+HELP += \
+	\n$(COLOR_COMMENT)Security:$(COLOR_RESET)\
+	\n  $(COLOR_INFO)security:$(COLOR_RESET)     Run security checks
+endif
+
+ifdef SECURITY_PHP
+HELP += \
+	\n  $(COLOR_INFO)security-php:$(COLOR_RESET) Run security checks on php part
+endif
+
+ifneq ($(SECURITY_PHP),)
+HELP += \
+	\n
+endif
+
+############
+# Security #
+############
+
+ifneq ($(SECURITY_PHP),)
+
+security:
+
+endif
+
+ifdef SECURITY_PHP
+
+security: security-php
+
+security-php:
+	$(call log,Security Checker)
+	-@security-checker security:check
+
+security-php@test:
+	$(call log,Security Checker)
+	@security-checker security:check
+
+endif

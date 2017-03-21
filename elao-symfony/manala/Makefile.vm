@@ -1,0 +1,138 @@
+.PHONY: setup provision update
+
+# Vagrant
+VAGRANT_BIN = ${shell which vagrant}
+export VAGRANT_CWD         = manala
+export VAGRANT_FORCE_COLOR = 1
+
+# Ansible
+ifeq ($(VAGRANT_BIN),)
+define ansible_playbook
+	ansible-playbook $(1)
+endef
+else
+define ansible_playbook
+	vagrant ssh -- "cd \$$APP_DIR && ANSIBLE_FORCE_COLOR=true ansible-playbook $(1)"
+endef
+endif
+
+# Help
+HELP += \
+	\n$(COLOR_COMMENT)Virtual machine:$(COLOR_RESET)
+
+ifneq ($(VAGRANT_BIN),)
+HELP += \
+	\n  $(COLOR_INFO)setup:$(COLOR_RESET)                 Setup virtual machine\
+	\n  $(COLOR_INFO)start:$(COLOR_RESET)                 Start virtual machine\
+	\n  $(COLOR_INFO)stop:$(COLOR_RESET)                  Stop virtual machine\
+	\n  $(COLOR_INFO)ssh:$(COLOR_RESET)                   Ssh to virtual machine\
+	\n  $(COLOR_INFO)destroy:$(COLOR_RESET)               Destroy virtual machine
+endif
+
+HELP += \
+	\n  $(COLOR_INFO)provision:$(COLOR_RESET)             Provision all services\
+	\n  $(COLOR_INFO)provision-ansible:$(COLOR_RESET)     Provision ansible roles\
+	\n  $(COLOR_INFO)provision-environment:$(COLOR_RESET) Provision environment variables\
+	\n  $(COLOR_INFO)provision-docker:$(COLOR_RESET)      Provision docker service\
+	\n  $(COLOR_INFO)provision-php:$(COLOR_RESET)         Provision php service\
+	\n  $(COLOR_INFO)provision-nginx:$(COLOR_RESET)       Provision nginx service\
+	\n  $(COLOR_INFO)provision-cron:$(COLOR_RESET)        Provision cron service\
+	\n  $(COLOR_INFO)provision-supervisor:$(COLOR_RESET)  Provision supervisor service
+
+HELP += \
+	\n  $(COLOR_INFO)update:$(COLOR_RESET)                Update all components\
+	\n  $(COLOR_INFO)update-ansible:$(COLOR_RESET)        Update ansible roles\
+	\n  $(COLOR_INFO)update-apt:$(COLOR_RESET)            Update apt packages\
+	\n  $(COLOR_INFO)update-docker:$(COLOR_RESET)         Update docker images
+
+HELP += \
+	\n
+
+###########
+# Vagrant #
+###########
+
+ifneq ($(VAGRANT_BIN),)
+
+setup:
+	$(call log,Vagrant up)
+	@vagrant up
+	@vagrant ssh -- 'make --silent --directory=$$APP_DIR provision-ansible provision install build ANSIBLE_FORCE_COLOR=true ANSIBLE_EXTRA_VARS={\"manala\":{\"update\":true}}'
+
+start:
+	$(call log,Vagrant up)
+	@vagrant up
+
+stop:
+	$(call log,Vagrant halt)
+	@vagrant halt
+
+ssh:
+	$(call log,Vagrant ssh)
+	@vagrant ssh
+
+destroy: confirm
+	$(call log,Vagrant destroy)
+	@vagrant destroy --force
+
+endif
+
+#############
+# Provision #
+#############
+
+provision:
+	$(call log,Ansible playbook - App)
+	@if [ -s $(ANSIBLE_TAGS) ]; \
+	then \
+		$(call ansible_playbook,ansible/app.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)'); \
+	else \
+		$(call ansible_playbook,ansible/app.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)' --tags=$(ANSIBLE_TAGS)); \
+	fi
+
+provision-ansible:
+	$(call log,Ansible playbook - Ansible)
+	@if [ -s $(ANSIBLE_TAGS) ]; \
+	then \
+		$(call ansible_playbook,ansible/ansible.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)'); \
+	else \
+		$(call ansible_playbook,ansible/ansible.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)' --tags=$(ANSIBLE_TAGS)); \
+	fi
+
+provision-environment: ANSIBLE_TAGS = manala_environment
+provision-environment: provision
+
+provision-docker: ANSIBLE_TAGS = manala_docker
+provision-docker: provision
+
+provision-php: ANSIBLE_TAGS = manala_php
+provision-php: provision
+
+provision-nginx: ANSIBLE_TAGS = manala_nginx
+provision-nginx: provision
+
+provision-cron: ANSIBLE_TAGS = manala_cron
+provision-cron: provision
+
+provision-supervisor: ANSIBLE_TAGS = manala_supervisor
+provision-supervisor: provision
+
+##########
+# Update #
+##########
+
+update: ANSIBLE_EXTRA_VARS = {"manala":{"update":true}}
+update: ANSIBLE_TAGS       = manala.update
+update: provision
+
+update-ansible: ANSIBLE_EXTRA_VARS = {"manala":{"update":true}}
+update-ansible: ANSIBLE_TAGS       = manala_ansible_galaxy.update
+update-ansible: provision-ansible
+
+update-apt: ANSIBLE_EXTRA_VARS = {"manala":{"update":true}}
+update-apt: ANSIBLE_TAGS       = manala_apt.update
+update-apt: provision
+
+update-docker: ANSIBLE_EXTRA_VARS = {"manala":{"update":true}}
+update-docker: ANSIBLE_TAGS       = manala_docker.update
+update-docker: provision
