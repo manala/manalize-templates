@@ -6,22 +6,19 @@
 ##########
 
 # Lint
-LINT_PHP = .
-LINT_JS  = ./app/Resources/assets/js
-LINT_CSS = ./app/Resources/assets/sass
+LINT_PHP = src tests
+LINT_JS  = app/Resources/assets/js
+LINT_CSS = app/Resources/assets/sass
 
-# Security
-SECURITY_PHP = .
-
-include manala/Makefile
+include manala/make/Makefile
 
 ################
 # Environments #
 ################
 
-# Test
-%@test: export SYMFONY_ENV = test
-%@test: export NODE_ENV    = test
+# Testing
+%@testing: export SYMFONY_ENV = test
+%@testing: export NODE_ENV    = test
 
 # Staging
 %@staging: export SYMFONY_ENV = prod
@@ -31,111 +28,142 @@ include manala/Makefile
 %@production: export SYMFONY_ENV = prod
 %@production: export NODE_ENV    = production
 
+#########
+# Setup #
+#########
+
+setup@development: install build
+
 ###########
 # Install #
 ###########
 
 ## Install application
-install:
-$(call log,Link directories)
-$(call link_directory, var/logs,     $(APP_LOG_DIR))
-$(call link_directory, var/cache,    $(APP_CACHE_DIR))
-$(call link_directory, var/sessions, $(APP_SESSIONS_DIR))
+install: $(call proxy,install)
+install@development:
+	$(call log,Install - Link directories)
+	$(call link_directory, var/logs,     $(APP_LOG_DIR))
+	$(call link_directory, var/cache,    $(APP_CACHE_DIR))
+	$(call link_directory, var/sessions, $(APP_SESSIONS_DIR))
 
-$(call log,Composer)
-composer install --verbose
+	$(call log,Install - Composer)
+	composer install --ansi --verbose
 
-$(call log,Database)
-bin/console doctrine:database:create --if-not-exists
-bin/console doctrine:schema:update --force
-bin/console doctrine:fixtures:load --no-interaction
+	$(call log,Install - Database)
+	bin/console doctrine:database:create --ansi --if-not-exists
+	bin/console doctrine:schema:update --ansi --force
+	bin/console doctrine:fixtures:load --ansi --no-interaction
 
-$(call log,Database - Test)
-bin/console doctrine:database:create --if-not-exists --env=test
-bin/console doctrine:schema:update --force --env=test
-bin/console doctrine:fixtures:load --no-interaction --env=test
+	$(call log,Install - Database - Test)
+	bin/console doctrine:database:create --ansi --if-not-exists --env=test
+	bin/console doctrine:schema:update --ansi --force --env=test
+	bin/console doctrine:fixtures:load --ansi --no-interaction --env=test
 
-$(call log,Yarn)
-yarn install
+	$(call log,Install - Yarn)
+	yarn install --color
 
-install@test:
-$(call log,Composer)
-composer install --verbose --no-progress --no-interaction
+install@testing:
+	$(call log,Install - Composer)
+	composer install --ansi --verbose --no-progress --no-interaction
 
-$(call log,Database)
-bin/console doctrine:database:drop --force --if-exists
-bin/console doctrine:database:create --if-not-exists
-bin/console doctrine:schema:update --force
+	$(call log,Install - Database)
+	bin/console doctrine:database:drop --ansi --force --if-exists
+	bin/console doctrine:database:create --ansi --if-not-exists
+	bin/console doctrine:schema:update --ansi --force
+	bin/console doctrine:fixtures:load --ansi --no-interaction
 
-$(call log,Yarn)
-yarn install
+	$(call log,Install - Yarn)
+	yarn install --color
 
 install@staging:
-$(call log,Link directories)
-$(call link_directory, var/logs,     $(APP_LOG_DIR))
-$(call link_directory, var/cache,    $(APP_CACHE_DIR))
-$(call link_directory, var/sessions, $(APP_SESSIONS_DIR))
+	$(call log,Install - Composer)
+	composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader
 
-$(call log,Composer)
-composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader
+	$(call log,Install - Symfony cache)
+	bin/console cache:warmup
 
-$(call log,Symfony cache)
-bin/console cache:warmup
-
-$(call log,Yarn)
-yarn install
+	$(call log,Install - Yarn)
+	yarn install
 
 install@production:
-$(call log,Link directories)
-$(call link_directory, var/logs,     $(APP_LOG_DIR))
-$(call link_directory, var/cache,    $(APP_CACHE_DIR))
-$(call link_directory, var/sessions, $(APP_SESSIONS_DIR))
+	$(call log,Install - Composer)
+	composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
-$(call log,Composer)
-composer install --verbose --no-progress --no-interaction --prefer-dist --optimize-autoloader --no-dev
+	$(call log,Install - Symfony cache)
+	bin/console cache:warmup --no-debug
 
-$(call log,Symfony cache)
-bin/console cache:warmup --no-debug
-
-$(call log,Yarn)
-yarn install
+	$(call log,Install - Yarn)
+	yarn install
 
 #################
 # Build / Watch #
 #################
 
 ## Build application
-build:
-$(call log,Webpack)
-node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
+build: $(call proxy,build)
+build@development:
+	$(call log,Build - Webpack)
+	node_modules/webpack/bin/webpack.js --progress --color --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
 
-build@production: build
+build@testing:
+	$(call log,Build - Webpack)
+	node_modules/webpack/bin/webpack.js --color --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
+
+build@staging:
+	$(call log,Build - Webpack)
+	node_modules/webpack/bin/webpack.js --color --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
+
+build@production:
+	$(call log,Build - Webpack)
+	node_modules/webpack/bin/webpack.js --color --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
 
 ## Watch application
-watch:
-$(call log,Webpack)
-node_modules/webpack/bin/webpack.js --watch --watch-poll --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
+watch: $(call proxy,watch)
+watch@development:
+	$(call log,Watch - Webpack)
+	node_modules/webpack/bin/webpack.js --watch --watch-poll --progress  --color --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js
 
 ########
 # Test #
 ########
 
-## Run tests
-test:
-$(call log,PHPUnit)
-vendor/bin/phpunit
+## Test
+test: test-php
 
-$(call log,Behat)
-bin/console cache:clear --env=test && vendor/bin/behat
+## Test Php
+test-php: phpunit behat
 
-test@test:
-$(call log,PHPUnit)
-rm -Rf build/phpunit && mkdir -p build/phpunit
-stty cols 80 && vendor/bin/phpunit --log-junit build/phpunit/junit.xml --coverage-clover build/phpunit/clover.xml --coverage-html build/phpunit/coverage
+## Run phpunit tests
+phpunit: $(call proxy,phpunit)
+phpunit@development:
+	$(call log,Test - Php - PHPUnit)
+	-vendor/bin/phpunit
 
-$(call log,Behat)
-rm -Rf build/behat && mkdir -p build/behat
-bin/console cache:clear && vendor/bin/behat --format=junit --out=build/behat --no-interaction
+phpunit@testing:
+	$(call log,Test - Php - PHPUnit)
+	vendor/bin/phpunit --log-junit build/test/phpunit.xml
+
+## Run behat tests
+behat: $(call proxy,behat)
+behat@development:
+	$(call log,Test - Php - Behat)
+	-vendor/bin/behat
+
+behat@testing:
+	$(call log,Test - Php - Behat)
+	mkdir -p build/test && vendor/bin/behat --format=junit --out=build/test/behat
+
+#######
+# Ssh #
+#######
+
+## Ssh (staging)
+ssh@staging:
+	ssh jarvis-2.elao.elao.ninja.local
+
+## Ssh (production)
+ssh@production:
+	ssh jarvis-2.elao.elao.local
 
 ##########
 # Deploy #
@@ -143,15 +171,14 @@ bin/console cache:clear && vendor/bin/behat --format=junit --out=build/behat --n
 
 ## Deploy application (staging)
 deploy@staging:
-$(call log,Ansible playbook)
-ansible-playbook ansible/deploy.yml --inventory-file=ansible/hosts --limit=deploy_demo
+	$(call log,Deploy - Ansible playbook)
+	ansible-playbook manala/deploy/playbook.yml --inventory-file=manala/deploy/hosts.yml --limit=staging
 
 ## Deploy application (production)
 deploy@production:
-$(call log,Ansible playbook)
-ansible-playbook ansible/deploy.yml --inventory-file=ansible/hosts --limit=deploy_prod
+	$(call log,Deploy - Ansible playbook)
+	ansible-playbook manala/deploy/playbook.yml --inventory-file=manala/deploy/hosts.yml --limit=production
 
 #######
 # App #
 #######
-
