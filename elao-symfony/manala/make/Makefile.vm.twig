@@ -12,7 +12,7 @@ define ansible_playbook
 endef
 else
 define ansible_playbook
-	vagrant ssh -- "cd \$$APP_DIR && ANSIBLE_FORCE_COLOR=true ansible-playbook $(1)"
+	vagrant ssh -- "cd {# app_dir #} && ANSIBLE_FORCE_COLOR=true ansible-playbook $(1)"
 endef
 endif
 
@@ -54,10 +54,10 @@ HELP += \
 
 ifneq ($(VAGRANT_BIN),)
 
-setup:
+ setup:
 	$(call log,Vagrant up)
 	@vagrant up
-	@vagrant ssh -- 'make --silent --directory=$$APP_DIR provision-ansible provision install build ANSIBLE_FORCE_COLOR=true ANSIBLE_EXTRA_VARS={\"manala\":{\"update\":true}}'
+	@vagrant ssh -- 'make --silent --directory={# app_dir #} provision-ansible provision install build ANSIBLE_FORCE_COLOR=true ANSIBLE_EXTRA_VARS={\"manala\":{\"update\":true}}'
 
 start:
 	$(call log,Vagrant up)

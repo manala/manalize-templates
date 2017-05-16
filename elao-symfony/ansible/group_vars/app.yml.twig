@@ -1,6 +1,14 @@
 ---
 
+# TODO: REMOVE THIS ONCE manala.yaml is fully managed
 {% include('common/ansible/group_vars/app_options.yml.twig') %}
+
+app:
+    name:      "{# app_name #}"
+    user:      "{# app_user #}"
+    dir:       "{# app_dir #}"
+    log_dir:   "{# log_dir #}"
+    cache_dir: "{# cache_dir #}"
 
 app_patterns:
 
