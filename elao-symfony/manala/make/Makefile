@@ -85,27 +85,3 @@ confirm:
 manala:
 	@curl -s -L http://bit.ly/10hA8iC | bash
 
-#########
-# Prout #
-#########
-
-pipi:
-	docker build \
-	    --pull \
-	    --tag elao.jarvis-2:test \
-		--file manala/Dockerfile.test \
-		.
-
-# --pull \
-# --no-cache \
-# --force-rm \
-# --rm \
-
-caca:
-	docker run \
-	    --rm \
-	    --volume `pwd`:/srv/app \
-	    -ti \
-	    --privileged \
-	    elao.jarvis-2:test \
-	    /bin/bash
