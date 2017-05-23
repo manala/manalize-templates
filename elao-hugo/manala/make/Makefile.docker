@@ -10,5 +10,6 @@ DOCKER_RUN = docker run \
 	--env DOCKER=1 \
 	--env USER_ID=$(shell id -u) \
 	--env GROUP_ID=$(shell id -g) \
+	--hostname $(app_name).dev\
 	$(DOCKER_OPTIONS) \
 	$(DOCKER_IMAGE):$(if $(DOCKER_TAG),$(DOCKER_TAG),latest)

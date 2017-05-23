@@ -8,12 +8,14 @@ DOCKER_TAG    ?=
 
 # Hugo
 HUGO_OPTIONS += --cleanDestinationDir
+HUGO_BASE_URL = $(subst ://,://$(if $(APP_URL_SUBDOMAIN),$(APP_URL_SUBDOMAIN).),$(APP_URL))
 
 include $(MANALA_DIR)/make/Makefile.manala
 include $(MANALA_DIR)/make/Makefile.docker
 include $(MANALA_DIR)/make/Makefile.vm.docker
 include $(MANALA_DIR)/make/Makefile.hugo
 include $(MANALA_DIR)/make/Makefile.laravel-mix
+include $(MANALA_DIR)/make/Makefile.optimize
 include $(MANALA_DIR)/make/Makefile.rsync
 
 -include $(MANALA_DIR)/../Makefile.local

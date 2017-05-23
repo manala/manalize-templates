@@ -1,0 +1,81 @@
+.PHONY: optimize
+
+# Help
+ifneq ($(OPTIMIZE_IMAGES),)
+HELP += \
+	\n$(COLOR_COMMENT)Optimize:$(COLOR_RESET)\
+	\n  $(COLOR_INFO)optimize:$(COLOR_RESET)            Optimize
+endif
+
+ifdef OPTIMIZE_IMAGES
+HELP += \
+	\n  $(COLOR_INFO)optimize-images:$(COLOR_RESET)     Optimize Images\
+	\n  $(COLOR_INFO)gifsicle:$(COLOR_RESET)            Gifsicle\
+	\n  $(COLOR_INFO)jpegtran:$(COLOR_RESET)            Jpegtran\
+	\n  $(COLOR_INFO)optipng:$(COLOR_RESET)             OptiPNG\
+	\n  $(COLOR_INFO)svgo:$(COLOR_RESET)                Svgo
+endif
+
+ifneq ($(OPTIMIZE_IMAGES),)
+HELP += \
+	\n
+endif
+
+############
+# Optimize #
+############
+
+ifneq ($(OPTIMIZE_IMAGES),)
+
+optimize: $(call proxy,optimize)
+
+optimize@%:
+
+endif
+
+ifdef OPTIMIZE_IMAGES
+
+optimize@%: optimize-images@% ;
+
+optimize-images: $(call proxy,optimize-images)
+
+optimize-images@%: gifsicle@% jpegtran@% optipng@% svgo@% ;
+
+
+gifsicle: $(call proxy,gifsicle)
+
+gifsicle@%:
+	$(call log,Optimize - Images - Gifsicle)
+	find $(OPTIMIZE_IMAGES) -iname "*.gif" -type f \
+		-exec echo {} \; \
+		-exec gifsicle --batch --interlace --optimize=3 {} \;
+	printf "\n"
+
+jpegtran: $(call proxy,jpegtran)
+
+jpegtran@%:
+	$(call log,Optimize - Images - Jpegtran)
+	find $(OPTIMIZE_IMAGES) \( -iname "*.jpg" -o -iname "*.jpeg" \) -type f \
+		-exec echo {} \; \
+		-exec jpegtran -copy none -progressive -optimize -outfile {} {} \;
+	printf "\n"
+
+optipng: $(call proxy,optipng)
+
+optipng@%:
+	$(call log,Optimize - Images - Optipng)
+	find $(OPTIMIZE_IMAGES) -iname "*.png" -type f \
+		-exec echo {} \; \
+		-exec optipng -quiet -strip all -o5 {} \;
+	printf "\n"
+
+svgo: $(call proxy,svgo)
+
+svgo@%:
+	$(call log,Optimize - Images - Svgo)
+	find $(OPTIMIZE_IMAGES) -iname "*.svg" -type f \
+		-exec echo {} \; \
+		-exec svgo --quiet {} \;
+	printf "\n"
+
+endif

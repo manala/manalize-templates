@@ -27,7 +27,7 @@ help:
 	@printf "$(HELP)"
 ifneq ($(DIR),$(MANALA_DIR))
 	@printf "\n$(COLOR_COMMENT)Application:$(COLOR_RESET)\n"
-	@awk '/^[a-zA-Z\-\_0-9\.@]+:/ { \
+	@awk '/^[a-zA-Z\-\_0-9\.@%]+:/ { \
 		helpMessage = match(lastLine, /^## (.*)/); \
 		if (helpMessage) { \
 			helpCommand = substr($$1, 0, index($$1, ":")); \
@@ -72,17 +72,17 @@ confirm:
 manala:
 	@curl -s -L http://bit.ly/10hA8iC | bash
 
-############
-# Manifest #
-############
+########
+# Yaml #
+########
 
 # See: https://gist.github.com/pkuczynski/8665367
-define manifest_parse_new_line
+define yaml_parse_new_line
 
 
 endef
-define manifest_parse
-    $(subst [[|]],$(manifest_parse_new_line),$(shell prefix=$2 ; \
+define yaml_parse
+    $(subst [[|]],$(yaml_parse_new_line),$(shell prefix=$2 ; \
 		space='[[:space:]]*' ; \
 		word='[a-zA-Z0-9_]*' ; \
 		fs=$(shell echo @|tr @ '\034') ; \
@@ -100,4 +100,5 @@ define manifest_parse
 	))
 endef
 
-$(eval $(call manifest_parse,$(MANALA_DIR)/manifest.yaml))
+$(eval $(call yaml_parse,$(MANALA_DIR)/manifest.yaml))
+$(eval $(call yaml_parse,$(MANALA_DIR)/../manala.yaml))

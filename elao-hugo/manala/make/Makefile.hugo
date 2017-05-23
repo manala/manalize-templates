@@ -1,6 +1,7 @@
 HUGO = hugo \
 	--verbose \
 	$(if $(HUGO_THEME),--theme $(HUGO_THEME)) \
+	$(if $(HUGO_BASE_URL),--baseURL $(HUGO_BASE_URL)) \
 	$(HUGO_OPTIONS)
 
 HUGO_SERVER = hugo server \
