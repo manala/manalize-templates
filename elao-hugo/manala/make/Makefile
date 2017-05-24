@@ -67,9 +67,7 @@ endif
 # Rsync #
 #########
 
-ifdef RSYNC_RSH
 MANALA_RSYNC_RSH = $(RSYNC_RSH)
-endif
 
 RSYNC = $(MANALA_RSYNC)
 
