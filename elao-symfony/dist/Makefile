@@ -172,12 +172,12 @@ ssh@production:
 ## Deploy application (staging)
 deploy@staging:
 	$(call log,Deploy - Ansible playbook)
-	ansible-playbook manala/deploy/playbook.yml --inventory-file=manala/deploy/hosts.yml --limit=staging
+	ansible-playbook manala/deploy/playbook.yaml --inventory-file=manala/deploy/hosts.yaml --limit=staging
 
 ## Deploy application (production)
 deploy@production:
 	$(call log,Deploy - Ansible playbook)
-	ansible-playbook manala/deploy/playbook.yml --inventory-file=manala/deploy/hosts.yml --limit=production
+	ansible-playbook manala/deploy/playbook.yaml --inventory-file=manala/deploy/hosts.yaml --limit=production
 
 #######
 # App #

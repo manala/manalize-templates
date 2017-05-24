@@ -2,10 +2,10 @@
 # vi: set ft=ruby :
 
 # Metadata
-metadata = YAML::load(File.read(File.dirname(__FILE__) + '/metadata.yml'))
+metadata = YAML::load(File.read(File.dirname(__FILE__) + '/metadata.yaml'))
 
 # Manala
-manala = YAML::load(File.read(File.dirname(__FILE__) + '/../manala.yml'))
+manala = YAML::load(File.read(File.dirname(__FILE__) + '/../manala.yaml'))
 
 Vagrant.require_version '>= 1.8.4'
 

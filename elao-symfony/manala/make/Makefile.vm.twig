@@ -85,18 +85,18 @@ provision:
 	$(call log,Ansible playbook - App)
 	@if [ -s $(ANSIBLE_TAGS) ]; \
 	then \
-		$(call ansible_playbook,ansible/app.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)'); \
+		$(call ansible_playbook,ansible/app.yaml --extra-vars='$(ANSIBLE_EXTRA_VARS)'); \
 	else \
-		$(call ansible_playbook,ansible/app.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)' --tags=$(ANSIBLE_TAGS)); \
+		$(call ansible_playbook,ansible/app.yaml --extra-vars='$(ANSIBLE_EXTRA_VARS)' --tags=$(ANSIBLE_TAGS)); \
 	fi
 
 provision-ansible:
 	$(call log,Ansible playbook - Ansible)
 	@if [ -s $(ANSIBLE_TAGS) ]; \
 	then \
-		$(call ansible_playbook,ansible/ansible.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)'); \
+		$(call ansible_playbook,ansible/ansible.yaml --extra-vars='$(ANSIBLE_EXTRA_VARS)'); \
 	else \
-		$(call ansible_playbook,ansible/ansible.yml --extra-vars='$(ANSIBLE_EXTRA_VARS)' --tags=$(ANSIBLE_TAGS)); \
+		$(call ansible_playbook,ansible/ansible.yaml --extra-vars='$(ANSIBLE_EXTRA_VARS)' --tags=$(ANSIBLE_TAGS)); \
 	fi
 
 provision-environment: ANSIBLE_TAGS = manala_environment
